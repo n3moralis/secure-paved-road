@@ -1,0 +1,88 @@
+---
+# Static checks for infrastructure code. No cloud credentials here: this
+# workflow cannot change anything, it only proves the code is well-formed and
+# reports misconfigurations into GitHub code scanning (Security tab).
+name: terraform
+
+"on":
+  pull_request:
+    paths: ["modules/**", "platforms/**", ".github/workflows/terraform.yml"]
+  push:
+    branches: [main]
+    paths: ["modules/**", "platforms/**", ".github/workflows/terraform.yml"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: terraform-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # Every block is validated and unit-tested on its own (mocked provider:
+  # no cloud account, no cost). A new block is picked up automatically.
+  modules:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_wrapper: false
+      - name: fmt, validate, test every block
+        run: |
+          terraform fmt -check -recursive modules
+          for m in modules/*/; do
+            echo "::group::$m"
+            terraform -chdir="$m" init -backend=false -input=false
+            terraform -chdir="$m" validate
+            terraform -chdir="$m" test
+            echo "::endgroup::"
+          done
+
+  validate:
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        cloud: [gke]          # later: aws, azure — same checks, new directories
+        layer: [foundation, platform]
+    defaults:
+      run:
+        working-directory: platforms/${{ matrix.cloud }}/terraform/${{ matrix.layer }}
+    steps:
+      # TODO(stage 2): pin every action to a commit SHA; Dependabot keeps them current.
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_wrapper: false
+      - run: terraform fmt -check -diff
+      - run: terraform init -backend=false -input=false -lockfile=readonly
+      - run: terraform validate
+      - uses: terraform-linters/setup-tflint@v4
+      - run: tflint --init && tflint --config "$GITHUB_WORKSPACE/.tflint.hcl" --format compact
+
+  checkov:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      security-events: write # upload findings to code scanning
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: bridgecrewio/checkov-action@v12
+        with:
+          directory: .
+          framework: terraform
+          output_format: cli,sarif
+          output_file_path: console,checkov.sarif
+          soft_fail: false
+      - uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: checkov.sarif
+          category: checkov

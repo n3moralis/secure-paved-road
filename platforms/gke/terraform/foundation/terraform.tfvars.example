@@ -1,0 +1,5 @@
+# Copy to terraform.tfvars (gitignored) and fill in.
+project_id           = "paved-road-XXXXXX"
+billing_account      = "XXXXXX-XXXXXX-XXXXXX"
+budget_amount        = 20
+github_repository_id = "123456789"

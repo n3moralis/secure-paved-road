@@ -1,0 +1,3 @@
+# Copy to terraform.tfvars (gitignored) and fill in.
+project_id  = "paved-road-XXXXXX"
+admin_cidrs = ["203.0.113.10/32"] # curl -s https://ifconfig.me

@@ -1,0 +1,27 @@
+# Terraform — keep .terraform.lock.hcl COMMITTED (pins provider checksums)
+**/.terraform/*
+*.tfstate
+*.tfstate.*
+*.tfplan
+tfplan
+crash.log
+crash.*.log
+*.tfvars
+*.tfvars.json
+!*.tfvars.example
+override.tf
+override.tf.json
+*_override.tf
+
+# Never: credentials of any kind (the design uses none, keep it that way)
+*.json.key
+*-key.json
+credentials*.json
+.env
+.env.*
+
+# Local tooling
+.DS_Store
+.idea/
+.vscode/
+checkov.sarif
