@@ -1,4 +1,20 @@
-mock_provider "google" {}
+# The mock invents random strings for computed attributes; the provider then
+# rejects them where it validates a format (service_account_id must be a full
+# resource name). Give the computed attributes realistic shapes.
+mock_provider "google" {
+  mock_resource "google_service_account" {
+    defaults = {
+      name  = "projects/test-project/serviceAccounts/ci-publisher@test-project.iam.gserviceaccount.com"
+      email = "ci-publisher@test-project.iam.gserviceaccount.com"
+    }
+  }
+
+  mock_resource "google_iam_workload_identity_pool" {
+    defaults = {
+      name = "projects/123456789012/locations/global/workloadIdentityPools/github"
+    }
+  }
+}
 
 variables {
   project_id    = "test-project"
