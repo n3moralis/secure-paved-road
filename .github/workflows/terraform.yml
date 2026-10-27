@@ -24,10 +24,10 @@ jobs:
   modules:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           persist-credentials: false
-      - uses: hashicorp/setup-terraform@v3
+      - uses: hashicorp/setup-terraform@v4
         with:
           terraform_wrapper: false
       - name: fmt, validate, test every block
@@ -53,16 +53,16 @@ jobs:
         working-directory: platforms/${{ matrix.cloud }}/terraform/${{ matrix.layer }}
     steps:
       # TODO(stage 2): pin every action to a commit SHA; Dependabot keeps them current.
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           persist-credentials: false
-      - uses: hashicorp/setup-terraform@v3
+      - uses: hashicorp/setup-terraform@v4
         with:
           terraform_wrapper: false
       - run: terraform fmt -check -diff
       - run: terraform init -backend=false -input=false -lockfile=readonly
       - run: terraform validate
-      - uses: terraform-linters/setup-tflint@v4
+      - uses: terraform-linters/setup-tflint@v6
       - run: tflint --init && tflint --config "$GITHUB_WORKSPACE/.tflint.hcl" --format compact
 
   checkov:
@@ -71,7 +71,7 @@ jobs:
       contents: read
       security-events: write # upload findings to code scanning
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           persist-credentials: false
       - uses: bridgecrewio/checkov-action@v12
@@ -81,7 +81,7 @@ jobs:
           output_format: cli,sarif
           output_file_path: console,checkov.sarif
           soft_fail: false
-      - uses: github/codeql-action/upload-sarif@v3
+      - uses: github/codeql-action/upload-sarif@v4
         if: always()
         with:
           sarif_file: checkov.sarif
