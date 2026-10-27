@@ -12,3 +12,6 @@ updates:
     directories: ["/platforms/gke/terraform/foundation", "/platforms/gke/terraform/platform"]
     schedule:
       interval: weekly
+    ignore:
+      - dependency-name: "hashicorp/google"
+        update-types: ["version-update:semver-major"]
